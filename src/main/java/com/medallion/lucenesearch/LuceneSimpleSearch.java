@@ -14,9 +14,14 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 public class LuceneSimpleSearch {
 
@@ -24,20 +29,30 @@ public class LuceneSimpleSearch {
 
         //New index
         StandardAnalyzer standardAnalyzer = new StandardAnalyzer();
-        Directory directory = new RAMDirectory();
+
+        //Input
+        String inputFilePath = "/tmp/lucene/input/input.txt";
+
+        //Output
+        String outputPath = "/tmp/lucene/output";
+        File file = new File(inputFilePath);
+
+        Directory directory = FSDirectory.open(Paths.get(outputPath));
         IndexWriterConfig config = new IndexWriterConfig(standardAnalyzer);
+        config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
         //Create a writer
         IndexWriter writer = new IndexWriter(directory, config);
+
         Document document = new Document();
+        try (BufferedReader br = new BufferedReader(new FileReader(inputFilePath)) ) {
 
-        document.add(new TextField("content", "Test run", Field.Store.YES));
-        writer.addDocument(document);
-
-        document.add(new TextField("content", "Adam test", Field.Store.YES));
-        writer.addDocument(document);
-
-        writer.close();
+            document.add(new TextField("content", br));
+            writer.addDocument(document);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         //Create a search
         IndexReader reader = DirectoryReader.open(directory);
